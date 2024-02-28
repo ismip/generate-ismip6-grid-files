@@ -6,9 +6,30 @@ dy=grid.dy;
 nx_centers=grid.nx_centers;
 ny_centers=grid.ny_centers;
 nsize=grid.nx_centers*grid.ny_centers;
+%% Create gridded x and y
+[ycenters,xcenters]=meshgrid((0:ny_centers-1).*dy , (0:nx_centers-1).*dx);
+
+
+%% Write 2d xy netcdf file
+if(flag_xy)
+        disp(['Generating ' grid.xyOutputFileName ])
+
+if exist(grid.xyOutputFileName, 'file') ~= 0;
+    delete(grid.xyOutputFileName)
+end
+
+%% write 2D and 1d x,y
+wnc(xcenters-proj_info.falseeasting,grid.xyOutputFileName,'x2','m','grid center x-coordinate',{'x','y'},0,'NETCDF4')
+wnc(ycenters-proj_info.falsenorthing,grid.xyOutputFileName,'y2','m','grid center y-coordinate',{'x','y'},0,'NETCDF4')
+
+wnc(squeeze(xcenters(:,1))-proj_info.falseeasting,grid.xyOutputFileName,'x1','m','grid center x-coordinate','x',0,'NETCDF4')
+wnc(squeeze(ycenters(1,:))-proj_info.falsenorthing,grid.xyOutputFileName,'y1','m','grid center y-coordinate','y',0,'NETCDF4')
+
+end
+
+if(flag_nc || flag_txt)
 
 %% Create lat,lon coordinates
-[ycenters,xcenters]=meshgrid((0:ny_centers-1).*dy , (0:nx_centers-1).*dx);
 [LI_grid_center_lat,LI_grid_center_lon]=polarstereo_inv(...
     xcenters(:)-proj_info.falseeasting,...
     ycenters(:)-proj_info.falsenorthing,...
@@ -64,6 +85,7 @@ LI_grid_dims_CDO_format=int32(size(LI_grid_center_lat_CDO_format));
 LI_grid_imask_CDO_format=zeros(LI_grid_dims_CDO_format,'int32');
 LI_grid_imask_CDO_format(:,:)=1;
 
+end
 
 %% Write CDO grid netcdf file
 if(flag_nc)
@@ -74,20 +96,20 @@ if exist(grid.LatLonOutputFileName, 'file') ~= 0;
 end
 
 % grid centers
-wnc(LI_grid_center_lat,grid.LatLonOutputFileName,'lat','degrees_north','grid center latitude',{'x','y'},0,'classic')
+wnc(LI_grid_center_lat,grid.LatLonOutputFileName,'lat','degrees_north','grid center latitude',{'x','y'},0,'NETCDF4')
 ncwriteatt(grid.LatLonOutputFileName,'lat','standard_name','latitude')
 ncwriteatt(grid.LatLonOutputFileName,'lat','bounds','lat_bnds')
 
-wnc(LI_grid_center_lon,grid.LatLonOutputFileName,'lon','degrees_east','grid center longitude',{'x','y'},0,'classic')
+wnc(LI_grid_center_lon,grid.LatLonOutputFileName,'lon','degrees_east','grid center longitude',{'x','y'},0,'NETCDF4')
 ncwriteatt(grid.LatLonOutputFileName,'lon','standard_name','longitude')
 ncwriteatt(grid.LatLonOutputFileName,'lon','bounds','lon_bnds')
 
 % bounds
-wnc(LI_grid_corner_lat_CDO_format,grid.LatLonOutputFileName,'lat_bnds','degrees_north','grid corner latitude',{'nv4','x','y'},0,'classic')
-wnc(LI_grid_corner_lon_CDO_format,grid.LatLonOutputFileName,'lon_bnds','degrees_east','grid corner longitude',{'nv4','x','y'},0,'classic')
+wnc(LI_grid_corner_lat_CDO_format,grid.LatLonOutputFileName,'lat_bnds','degrees_north','grid corner latitude',{'nv4','x','y'},0,'NETCDF4')
+wnc(LI_grid_corner_lon_CDO_format,grid.LatLonOutputFileName,'lon_bnds','degrees_east','grid corner longitude',{'nv4','x','y'},0,'NETCDF4')
 
 % dummy needed for mapping
-wnc(int8(LI_grid_center_lon*0+1),grid.LatLonOutputFileName,'dummy','1','dummy variable',{'x','y'},0,'classic')
+wnc(int8(LI_grid_center_lon*0+1),grid.LatLonOutputFileName,'dummy','1','dummy variable',{'x','y'},0,'NETCDF4')
 % add lat,lon mapping
 ncwriteatt(grid.LatLonOutputFileName,'dummy','coordinates','lon lat')
 
@@ -122,23 +144,6 @@ fprintf(fileID,'%s\n','ybounds  = ');
 fprintf(fileID,'%12.8f %12.8f %12.8f %12.8f\n',LI_grid_corner_lat_CDO_format);
 
 fclose(fileID);
-end
-
-%% Write 2d xy netcdf file
-if(flag_xy)
-        disp(['Generating ' grid.xyOutputFileName ])
-
-if exist(grid.xyOutputFileName, 'file') ~= 0;
-    delete(grid.xyOutputFileName)
-end
-
-%% write 2D and 1d x,y
-wnc(xcenters-proj_info.falseeasting,grid.xyOutputFileName,'x2','m','grid center x-coordinate',{'x','y'},0,'classic')
-wnc(ycenters-proj_info.falsenorthing,grid.xyOutputFileName,'y2','m','grid center y-coordinate',{'x','y'},0,'classic')
-
-wnc(squeeze(xcenters(:,1))-proj_info.falseeasting,grid.xyOutputFileName,'x1','m','grid center x-coordinate','x',0,'classic')
-wnc(squeeze(ycenters(1,:))-proj_info.falsenorthing,grid.xyOutputFileName,'y1','m','grid center y-coordinate','y',0,'classic')
-
 end
 
 successfully_completed = 1;
